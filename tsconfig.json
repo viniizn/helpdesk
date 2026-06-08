@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true
+  }
+}
+
+/*
+"strict": true — ativa um conjunto de verificações de uma vez: noImplicitAny, strictNullChecks, strictFunctionTypes e mais. Sem isso, TypeScript é permissivo demais e perde metade do valor.
+"exactOptionalPropertyTypes": true — distingue { foo?: string } (campo pode não existir) de { foo: string | undefined } (campo existe mas pode ser undefined). Sutil, mas evita bugs em validações.
+"noUncheckedIndexedAccess": true — array[0] passa a ter tipo string | undefined em vez de só string. Força você a checar se o elemento existe antes de usar. Doloroso no início, correto no final.
+"moduleResolution": "NodeNext" — necessário para imports com extensão .js no ESM moderno.
+*/

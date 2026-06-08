@@ -1,0 +1,36 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+build/
+
+# Ambiente — NUNCA sobe pro git
+.env
+.env.local
+.env.*.local
+
+# Prisma
+apps/api/prisma/migrations/dev.db
+apps/api/prisma/*.db
+
+# Logs
+*.log
+npm-debug.log*
+pino-pretty.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Docker
+docker-compose.override.yml

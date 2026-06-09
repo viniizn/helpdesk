@@ -8,6 +8,7 @@ import {
   assignTicketSchema, 
   listTicketsSchema,
 } from '../schemas/ticket.schema.js';
+import { sendTicketStatusEmail } from '../plugins/mailer.js';
 
 export async function ticketRoutes(app: FastifyInstance) {
 
@@ -117,36 +118,6 @@ export async function ticketRoutes(app: FastifyInstance) {
         return reply.send({ ticket });
     });
 
-    //Atualizar ticket (titulo, descricao, prioridade)
-    app.patch("/:id", async (request, reply) => {
-        const { id } = request.params as { id: string };
-        const data = updateTicketSchema.parse(request.body);
-
-        const ticket = await prisma.ticket.findUnique({ where: { id } });
-
-        if (!ticket) {
-            return reply.status(404).send({ error: "Chamado não encontrado" });
-        }
-
-        //Só o criador/admin podem editar
-        const isAdmin = request.user.role === "ADMIN";
-        if (!isAdmin && ticket.createdById !== request.user.sub) {
-            return reply.status(403).send({ message: "Acesso negado" });
-        }
-
-        //Ticket fechado nao pode ser editado
-        if (ticket.status === "CLOSED") {
-            return reply.status(400).send({ message: "Chamado encerrado não pode ser editado" });
-        }
-
-        const updated = await prisma.ticket.update({
-            where: { id },
-            data,
-        });
-
-        return reply.send({ ticket: updated });
-    });
-
     //Mudar status do ticket
     app.patch("/:id/status", async (request, reply) => {
         const { id } = request.params as { id: string };
@@ -172,8 +143,21 @@ export async function ticketRoutes(app: FastifyInstance) {
 
         const updated = await prisma.ticket.update({
             where: { id },
-            data: { status: newStatus },
+            data:  { status: newStatus },
+            include: {
+                createdBy: { select: { id: true, name: true, email: true } },
+            },
         });
+
+        // Notifica o dono do ticket sobre a mudança de status
+        await sendTicketStatusEmail({
+            to:          updated.createdBy.email,
+            userName:    updated.createdBy.name,
+            ticketId:    updated.id,
+            ticketTitle: updated.title,
+            eventType:   'status_changed',
+            newStatus:   updated.status,
+        })
 
         return reply.send({ ticket: updated });
     });
@@ -212,4 +196,34 @@ export async function ticketRoutes(app: FastifyInstance) {
         })
         return reply.send({ ticket: updated })
     })
+
+        //Atualizar ticket (titulo, descricao, prioridade)
+    app.patch("/:id", async (request, reply) => {
+        const { id } = request.params as { id: string };
+        const data = updateTicketSchema.parse(request.body);
+
+        const ticket = await prisma.ticket.findUnique({ where: { id } });
+
+        if (!ticket) {
+            return reply.status(404).send({ error: "Chamado não encontrado" });
+        }
+
+        //Só o criador/admin podem editar
+        const isAdmin = request.user.role === "ADMIN";
+        if (!isAdmin && ticket.createdById !== request.user.sub) {
+            return reply.status(403).send({ message: "Acesso negado" });
+        }
+
+        //Ticket fechado nao pode ser editado
+        if (ticket.status === "CLOSED") {
+            return reply.status(400).send({ message: "Chamado encerrado não pode ser editado" });
+        }
+
+        const updated = await prisma.ticket.update({
+            where: { id },
+            data,
+        });
+
+        return reply.send({ ticket: updated });
+    });
 }

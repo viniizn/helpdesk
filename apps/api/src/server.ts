@@ -5,6 +5,7 @@ import { authRoutes } from "./routes/auth.routes.js";
 import { authenticate } from "./plugins/authenticate.js";
 import cors from "@fastify/cors";
 import { ticketRoutes } from "./routes/ticket.routes.js";
+import { commentRoutes } from "./routes/comment.routes.js";
 
 const app = Fastify({ logger: true})
 
@@ -42,6 +43,8 @@ app.register(cors, {
 app.register(authenticate);
 
 app.register(ticketRoutes, { prefix: "/tickets" })
+
+app.register(commentRoutes, { prefix: "/tickets" })
 
 //Registra as rotas de autenticação
 app.register(authRoutes, { prefix: "/auth" })

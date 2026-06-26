@@ -30,14 +30,17 @@ enum Priority {
     CRITICAL
 }
 
-//Relações nomeadas — necessário porque User aparece 
-//duas vezes em Ticket (quem criou e quem foi atribuído)
 model User {
   id           String   @id @default(cuid())
   name         String
   email        String   @unique
   passwordHash String
   role         Role     @default(USER)
+
+  secretariat  String?
+  department   String?
+  location     String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -76,6 +79,8 @@ model Ticket {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  location String?
 }
 
 model Comment {
@@ -100,6 +105,20 @@ model Attachment {
 
   ticket   Ticket @relation(fields: [ticketId], references: [id])
   ticketId String
+
+  createdAt DateTime @default(now())
+}
+
+model Invite {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(USER)
+  token     String   @unique @default(cuid())
+  expiresAt DateTime
+  usedAt    DateTime?
+  // usedAt null = ainda não usado
+  // usedAt preenchido = já foi aceito
 
   createdAt DateTime @default(now())
 }

@@ -1,11 +1,14 @@
 import type { TicketPriority, TicketStatus, UserRole } from "./enums.js";
 
 export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  createdAt: Date;
+  id:           string
+  name:         string
+  email:        string
+  role:         UserRole
+  secretariat?: string
+  department?:  string
+  location?:    string
+  createdAt:    Date
 }
 
 export interface Ticket {

@@ -7,6 +7,9 @@ import cors from "@fastify/cors";
 import { ticketRoutes } from "./routes/ticket.routes.js";
 import { commentRoutes } from "./routes/comment.routes.js";
 import { adminRoutes } from "./routes/admin.routes.js";
+import { ZodError } from 'zod'
+import { userRoutes } from "./routes/user.routes.js";
+import { inviteRoutes } from "./routes/invite.routes.js";
 
 const app = Fastify({ logger: true})
 
@@ -32,18 +35,17 @@ app.register(jwt, {
 })
 
 app.register(cors, {
-  origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
-  // origin específica — nunca "*" quando usa cookies.
-  // "*" + credentials é bloqueado pelo browser por segurança.
-
+  origin:  process.env.FRONTEND_URL ?? 'http://localhost:5173',
   credentials: true,
-  // credentials: true — permite o browser enviar cookies
-  // em requisições cross-origin para esta API.
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 })
 
 app.register(authenticate);
+app.register(inviteRoutes);
 
 app.register(adminRoutes, { prefix: '/admin' })
+
+app.register(userRoutes, { prefix: "/users" });
 
 app.register(ticketRoutes, { prefix: "/tickets" })
 
@@ -51,6 +53,17 @@ app.register(commentRoutes, { prefix: "/tickets" })
 
 //Registra as rotas de autenticação
 app.register(authRoutes, { prefix: "/auth" })
+
+app.setErrorHandler((error, request, reply) => {
+  if (error instanceof ZodError) {
+    return reply.status(400).send({
+      message: error.issues[0]?.message ?? 'Dados inválidos',
+    })
+  }
+
+  app.log.error(error)
+  return reply.status(500).send({ message: 'Erro interno do servidor' })
+})
 
 app.listen({ port: 3333, host: "0.0.0.0"}, (err, address) => {
     if (err) {

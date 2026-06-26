@@ -15,11 +15,18 @@ export async function ticketRoutes(app: FastifyInstance) {
     //Todas as rotas exigem auth
     app.addHook("onRequest", app.authenticate);
 
+    app.get('/categories', async (request, reply) => {
+        const categories = await prisma.category.findMany({
+            orderBy: { name: 'asc' },
+            select:  { id: true, name: true },
+        })
+        return reply.send({ categories })
+    })
+
     //Criar ticket
     app.post("/", async (request, reply) => {
         const data = createTicketSchema.parse(request.body);
 
-        //Verifica se categoria existe antes de criar
         const category = await prisma.category.findUnique({
             where: { id: data.categoryId },
         });
@@ -35,10 +42,16 @@ export async function ticketRoutes(app: FastifyInstance) {
                 priority: data.priority,
                 categoryId: data.categoryId,
                 createdById: request.user.sub,
+                location: data.location,
             },
             include: {
                 category: { select: { id: true, name: true } },
-                createdBy: { select: { id: true, name: true } },
+                createdBy: {
+                    select: {
+                        id: true, name: true,
+                        secretariat: true, department: true, location: true,
+                    },
+                },
             },
         });
 
@@ -69,7 +82,12 @@ export async function ticketRoutes(app: FastifyInstance) {
                 orderBy: { createdAt: "desc" },
                 include: {
                     category: { select: { id: true, name: true } },
-                    createdBy: { select: { id: true, name: true } },
+                    createdBy: {
+                        select: {
+                            id: true, name: true,
+                            secretariat: true, department: true, location: true,
+                        },
+                    },
                     assignedTo: { select: { id: true, name: true } },
                 },
             }),
@@ -96,7 +114,12 @@ export async function ticketRoutes(app: FastifyInstance) {
             where: { id },
             include: {
                 category: { select: { id: true, name: true } },
-                createdBy: { select: { id: true, name: true } },
+                createdBy: {
+                    select: {
+                        id: true, name: true,
+                        secretariat: true, department: true, location: true,
+                    },
+                },
                 assignedTo: { select: { id: true, name: true } },
                 comments: {
                     where: isUser ? { isInternal: false } : {},
@@ -118,7 +141,6 @@ export async function ticketRoutes(app: FastifyInstance) {
         return reply.send({ ticket });
     });
 
-    //Mudar status do ticket
     app.patch("/:id/status", async (request, reply) => {
         const { id } = request.params as { id: string };
         const { status: newStatus } = changeStatusSchema.parse(request.body)
@@ -129,27 +151,30 @@ export async function ticketRoutes(app: FastifyInstance) {
             return reply.status(404).send({ error: "Chamado não encontrado" });
         }
 
-        //Só agente/admin podem mudar status
         if (request.user.role === "USER") {
             return reply.status(403).send({ message: "Acesso negado" });
         }
 
-        // Valida a transição usando a função do shared
         if (!isValidTransition(ticket.status as any, newStatus)) {
             return reply.status(400).send({
                 message: `Transição inválida: ${ticket.status} → ${newStatus}`,
             })
         }
 
+        const shouldAssign = newStatus === 'IN_PROGRESS' && !ticket.assignedToId
+
         const updated = await prisma.ticket.update({
             where: { id },
-            data:  { status: newStatus },
+            data: {
+                status: newStatus,
+                ...(shouldAssign && { assignedToId: request.user.sub }),
+            },
             include: {
-                createdBy: { select: { id: true, name: true, email: true } },
+                createdBy:  { select: { id: true, name: true, email: true } },
+                assignedTo: { select: { id: true, name: true } },
             },
         });
 
-        // Notifica o dono do ticket sobre a mudança de status
         await sendTicketStatusEmail({
             to:          updated.createdBy.email,
             userName:    updated.createdBy.name,

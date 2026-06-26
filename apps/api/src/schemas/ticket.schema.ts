@@ -2,10 +2,11 @@ import { z } from 'zod'
 import { TicketStatus, TicketPriority } from '@helpdesk/shared'
 
 export const createTicketSchema = z.object({
-  title:       z.string().min(5, 'Título muito curto').max(120),
-  description: z.string().min(20, 'Descrição muito curta'),
+  title:       z.string().min(5).max(120),
+  description: z.string().min(20),
   priority:    z.nativeEnum(TicketPriority).default(TicketPriority.MEDIUM),
-  categoryId:  z.string().cuid('Category ID inválido'),
+  categoryId:  z.string().cuid(),
+  location:    z.string().min(2).max(150).optional(),
 })
 
 // z.nativeEnum funciona com nosso padrão "as const".

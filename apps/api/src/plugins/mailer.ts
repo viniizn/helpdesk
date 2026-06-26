@@ -1,19 +1,16 @@
-import nodemailer from 'nodemailer';
+import nodemailer from 'nodemailer'
 
-//Transportar é a conexão com o servidor SMTP
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "true", // true para 465, false para outras portas
-    //secure true usa porta 465 (SSL direto)
-    //secure false usa porta 587 (STARTTLS == mais comum em dev)
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
+  host:   process.env.SMTP_HOST,
+  port:   Number(process.env.SMTP_PORT ?? 587),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 })
 
-type EmailEvent = "status_changed" | "new_comment" | "ticket_assigned"
+type EmailEvent = 'status_changed' | 'new_comment' | 'ticket_assigned'
 
 interface TicketEmailOptions {
   to:          string
@@ -21,7 +18,6 @@ interface TicketEmailOptions {
   ticketId:    string
   ticketTitle: string
   eventType:   EmailEvent
-  // Opcional — só usado quando status muda
   newStatus?:  string
 }
 
@@ -33,7 +29,7 @@ function buildEmail(opts: TicketEmailOptions): { subject: string; html: string }
       subject: `[Helpdesk] Chamado atualizado: ${opts.ticketTitle}`,
       html: `
         <p>Olá, ${opts.userName}.</p>
-        <p>O status do seu chamado <strong>${opts.ticketTitle}</strong> 
+        <p>O status do seu chamado <strong>${opts.ticketTitle}</strong>
            foi atualizado para <strong>${opts.newStatus}</strong>.</p>
         <p><a href="${ticketUrl}">Ver chamado</a></p>
       `,
@@ -59,23 +55,55 @@ function buildEmail(opts: TicketEmailOptions): { subject: string; html: string }
 }
 
 export async function sendTicketStatusEmail(opts: TicketEmailOptions): Promise<void> {
-    //Em desenvolvimento, se SMTP nao estiver configurado, apenas loga
-    //Sem quebrar fluxo por falha de email
-    if (!process.env.SMTP_HOST) {
-        console.log(`[mailer] Email não enviado (SMTP não configurado): ${opts.eventType} → ${opts.to}`)
-        return;
-    }
+  if (!process.env.SMTP_HOST) {
+    console.log(`[mailer] Email não enviado (SMTP não configurado): ${opts.eventType} → ${opts.to}`)
+    return
+  }
 
-    const { subject, html } = buildEmail(opts)
+  const { subject, html } = buildEmail(opts)
 
-    try {
-        await transporter.sendMail({
-            from: `"Helpdesk" <${process.env.SMTP_USER}>`,
-            to: opts.to,
-            subject,
-            html,
-        })
-    } catch (error) {
-        console.error("[mailer] Erro ao enviar email:", error)
-    }
+  try {
+    await transporter.sendMail({
+      from:    `"Helpdesk" <${process.env.SMTP_USER}>`,
+      to:      opts.to,
+      subject,
+      html,
+    })
+  } catch (error) {
+    console.error('[mailer] Erro ao enviar email:', error)
+  }
+}
+// ← função fechada corretamente aqui
+
+export async function sendInviteEmail(opts: {
+  to:    string
+  name:  string
+  token: string
+  role:  string
+}): Promise<void> {
+  if (!process.env.SMTP_HOST) {
+    console.log(`[mailer] Convite não enviado (SMTP não configurado)`)
+    console.log(`[mailer] Link de convite: ${process.env.FRONTEND_URL}/accept-invite?token=${opts.token}`)
+    return
+  }
+
+  const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${opts.token}`
+
+  try {
+    await transporter.sendMail({
+      from:    `"Helpdesk" <${process.env.SMTP_USER}>`,
+      to:      opts.to,
+      subject: '[Helpdesk] Você foi convidado',
+      html: `
+        <p>Olá, ${opts.name}.</p>
+        <p>Você foi convidado para acessar o sistema de chamados como <strong>${opts.role}</strong>.</p>
+        <p>Clique no link abaixo para definir sua senha e ativar sua conta:</p>
+        <p><a href="${inviteUrl}">Ativar minha conta</a></p>
+        <p>Este link expira em <strong>3 dias</strong>.</p>
+        <p>Se você não esperava este convite, ignore este email.</p>
+      `,
+    })
+  } catch (error) {
+    console.error('[mailer] Falha ao enviar convite:', error)
+  }
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Mail, Clock, CheckCircle2, XCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Mail } from 'lucide-react'
 import { Input }  from '@/components/ui/input'
 import { Label }  from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -18,9 +17,15 @@ interface Invite {
 }
 
 const STATUS_CONFIG = {
-  pending:  { label: 'Pendente',  icon: <Clock size={12} />,        color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  accepted: { label: 'Aceito',    icon: <CheckCircle2 size={12} />, color: 'text-green-600 bg-green-50 border-green-200' },
-  expired:  { label: 'Expirado',  icon: <XCircle size={12} />,      color: 'text-gray-500 bg-gray-50 border-gray-200' },
+  pending:  { label: 'Pendente',  bg: 'rgba(217,119,6,0.10)',    color: '#b45309' },
+  accepted: { label: 'Aceito',    bg: 'var(--accent-subtle)',     color: 'var(--accent)' },
+  expired:  { label: 'Expirado',  bg: 'var(--surface-subtle)',    color: 'var(--text-muted)' },
+}
+
+const inputStyle: React.CSSProperties = {
+  background: 'var(--background)',
+  borderColor: 'var(--border)',
+  color: 'var(--text-primary)',
 }
 
 export function InvitesPage() {
@@ -45,69 +50,95 @@ export function InvitesPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'invites'] })
       setForm({ name: '', email: '', role: 'USER' })
-      // Em dev, mostra o link direto
       if (data.devLink) setDevLink(data.devLink)
       else setOpen(false)
     },
   })
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-6">
+
+      {/* Cabeçalho */}
+      <div
+        className="flex items-center justify-between pb-5"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
         <div>
-          <h2 className="text-xl font-semibold">Convites</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Gerencie o acesso ao sistema
+          <h2 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+            Convites
+          </h2>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            Gerencie o fluxo de acessos à plataforma.
           </p>
         </div>
+
         <Dialog open={open} onOpenChange={o => { setOpen(o); setDevLink('') }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Mail size={16} />
-              Convidar usuário
-            </Button>
+            <button
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-colors"
+              style={{ background: 'var(--accent)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
+            >
+              <Mail size={13} /> Convidar usuário
+            </button>
           </DialogTrigger>
-          <DialogContent>
+
+          <DialogContent style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
             <DialogHeader>
-              <DialogTitle>Novo convite</DialogTitle>
+              <DialogTitle className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Novo convite
+              </DialogTitle>
             </DialogHeader>
 
             {devLink ? (
-              // Em dev — mostra o link para testar sem SMTP
-              <div className="space-y-4 pt-2">
-                <p className="text-sm text-muted-foreground">
-                  SMTP não configurado. Use o link abaixo para testar:
+              <div className="space-y-3 pt-2 text-xs">
+                <p style={{ color: 'var(--text-muted)' }}>
+                  Ambiente de desenvolvimento — use o link abaixo para testar:
                 </p>
-                <div className="bg-muted rounded-lg p-3 break-all text-xs font-mono">
+                <div
+                  className="p-3 rounded-lg font-mono break-all text-xs"
+                  style={{
+                    background: 'var(--surface-subtle)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--accent)',
+                  }}
+                >
                   {devLink}
                 </div>
-                <Button className="w-full" onClick={() => { setOpen(false); setDevLink('') }}>
+                <button
+                  className="w-full py-2 rounded-lg text-sm font-semibold transition-colors"
+                  style={{ background: 'var(--surface-subtle)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                  onClick={() => { setOpen(false); setDevLink('') }}
+                >
                   Fechar
-                </Button>
+                </button>
               </div>
             ) : (
               <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs" style={{ color: 'var(--text-secondary)' }}>Nome</Label>
                   <Input
-                    placeholder="Nome completo"
+                    style={inputStyle}
+                    placeholder="Nome do usuário"
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs" style={{ color: 'var(--text-secondary)' }}>Email</Label>
                   <Input
+                    style={inputStyle}
                     type="email"
-                    placeholder="email@dominio.com"
+                    placeholder="nome@empresa.com"
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Perfil</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs" style={{ color: 'var(--text-secondary)' }}>Perfil</Label>
                   <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
-                    <SelectTrigger>
+                    <SelectTrigger style={inputStyle}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -117,65 +148,88 @@ export function InvitesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button
-                  className="w-full"
+                <button
+                  className="w-full py-2 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-40"
+                  style={{ background: 'var(--accent)' }}
                   onClick={() => create.mutate()}
                   disabled={!form.name || !form.email || create.isPending}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
                 >
                   {create.isPending ? 'Enviando...' : 'Enviar convite'}
-                </Button>
+                </button>
               </div>
             )}
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* Lista */}
       {isLoading ? (
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+            <div
+              key={i}
+              className="h-14 rounded-xl animate-pulse"
+              style={{ background: 'var(--surface-subtle)' }}
+            />
           ))}
         </div>
       ) : (
-        <div className="border rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="text-left p-3 font-medium">Nome</th>
-                <th className="text-left p-3 font-medium">Email</th>
-                <th className="text-left p-3 font-medium">Perfil</th>
-                <th className="text-left p-3 font-medium">Expira</th>
-                <th className="text-left p-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data?.map(invite => {
-                const s = STATUS_CONFIG[invite.status]
-                return (
-                  <tr key={invite.id} className="hover:bg-muted/30">
-                    <td className="p-3 font-medium">{invite.name}</td>
-                    <td className="p-3 text-muted-foreground">{invite.email}</td>
-                    <td className="p-3 text-muted-foreground">{invite.role}</td>
-                    <td className="p-3 text-muted-foreground text-xs">
-                      {new Date(invite.expiresAt).toLocaleDateString('pt-BR')}
-                    </td>
-                    <td className="p-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs font-medium ${s.color}`}>
-                        {s.icon} {s.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-              {data?.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground text-sm">
-                    Nenhum convite enviado ainda
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div
+          className="divide-y rounded-xl overflow-hidden"
+          style={{
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            divideColor: 'var(--border)',
+          }}
+        >
+          {data?.map(invite => {
+            const s = STATUS_CONFIG[invite.status]
+            return (
+              <div
+                key={invite.id}
+                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm transition-colors"
+                style={{ borderBottom: '1px solid var(--border)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-subtle)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {invite.name}
+                    </span>
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: 'var(--gold-accent)' }}
+                    >
+                      {invite.role}
+                    </span>
+                  </div>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    {invite.email}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 justify-between sm:justify-end">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    Expira {new Date(invite.expiresAt).toLocaleDateString('pt-BR')}
+                  </span>
+                  <span
+                    className="text-xs px-2.5 py-0.5 rounded-full font-semibold"
+                    style={{ background: s.bg, color: s.color }}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+
+          {data?.length === 0 && (
+            <p className="p-10 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+              Nenhum convite pendente.
+            </p>
+          )}
         </div>
       )}
     </div>

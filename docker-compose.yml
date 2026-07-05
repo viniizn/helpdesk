@@ -1,10 +1,7 @@
-# A versão "3.9" define quais features do Compose estão disponíveis.
-# services define os containers que sobem juntos.
 services:
 
   db:
     image: postgres:16-alpine
-    # alpine = imagem menor, sem ferramentas desnecessárias
     restart: unless-stopped
     environment:
       POSTGRES_USER: helpdesk
@@ -13,12 +10,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      # Volume nomeado persiste os dados entre reinicializações.
-      # Sem isso, toda vez que o container sobe o banco está vazio.
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      # Garante que a API só sobe depois do Postgres estar pronto.
-      # Sem healthcheck, a API tenta conectar antes do banco aceitar conexões.
       test: ["CMD-SHELL", "pg_isready -U helpdesk"]
       interval: 5s
       timeout: 5s
@@ -33,12 +26,10 @@ services:
       - "3333:3333"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/helpdesk
-      # "db" é o nome do service acima — o Docker resolve internamente
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: production
     depends_on:
       db:
-        # Só sobe quando o healthcheck do db passar
         condition: service_healthy
 
 volumes:

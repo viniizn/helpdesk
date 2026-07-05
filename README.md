@@ -1,135 +1,115 @@
-# Helpdesk — Sistema de Chamados
+# Helpdesk
 
-Sistema de suporte técnico híbrido (presencial e remoto) desenvolvido com foco em organização de fila de atendimento, rastreabilidade e controle de acesso por perfil.
+Sistema de gerenciamento de chamados desenvolvido para simular um ambiente corporativo de suporte técnico. O projeto possui autenticação, controle de acesso por perfis, gerenciamento de chamados e dashboard administrativo.
 
 ## Funcionalidades
 
-**Autenticação e Acesso**
-- Login seguro com cookies HttpOnly — token nunca exposto no frontend
-- Acesso restrito por convite — o admin convida usuários via email, sem cadastro público
-- Controle de perfis: Usuário, Técnico e Administrador
+* Autenticação com JWT utilizando HttpOnly Cookies
+* Controle de acesso por perfis (Usuário, Técnico e Administrador)
+* Cadastro de usuários por convite
+* Abertura e gerenciamento de chamados
+* Fluxo de status com transições validadas
+* Comentários públicos e notas internas
+* Dashboard com métricas
+* Gerenciamento de usuários e categorias
+* Notificações por e-mail
 
-**Chamados**
-- Abertura de chamados com título, descrição, prioridade, categoria e localização
-- Fluxo de status validado: `Aberto → Em atendimento → Aguardando → Resolvido → Encerrado`
-- Auto-atribuição do técnico ao iniciar o atendimento
-- Visualização em lista ou kanban
-- Comentários públicos e notas internas (visíveis só para staff)
+## Tecnologias
 
-**Localização**
-- Perfil do usuário com secretaria, setor e sala
-- Localização editável a cada chamado — evita dados desatualizados do perfil
+### Backend
 
-**Administração**
-- Dashboard com métricas: total de chamados, status, tempo médio de resolução
-- Gestão de usuários com alteração de perfil
-- Gestão de categorias com proteção contra exclusão vinculada
-- Gestão de convites com status (pendente, aceito, expirado)
+* Node.js
+* Fastify
+* TypeScript
+* Prisma ORM
+* PostgreSQL
+* Zod
+* JWT
+* Nodemailer
 
-**Notificações**
-- Email automático ao mudar status do chamado
-- Email ao receber nova resposta pública
-- Suporte a Nodemailer com qualquer SMTP (Ethereal para desenvolvimento)
+### Frontend
 
-## Stack
+* React
+* Vite
+* TypeScript
+* Tailwind CSS
+* shadcn/ui
+* TanStack Query
+* Zustand
+* React Router
 
-| Camada | Tecnologia |
-|---|---|
-| Backend | Node.js + Fastify + TypeScript |
-| ORM | Prisma 6 + PostgreSQL |
-| Validação | Zod |
-| Autenticação | JWT + HttpOnly Cookies |
-| Frontend | React + Vite + TypeScript |
-| UI | Shadcn/ui + Tailwind CSS v4 |
-| Estado servidor | TanStack Query |
-| Estado global | Zustand |
-| Roteamento | React Router v6 |
-| Email | Nodemailer |
-| Infraestrutura | Docker + Docker Compose |
-| Monorepo | npm Workspaces |
-| Tipos compartilhados | packages/shared |
+### Infraestrutura
+
+* Docker
+* Docker Compose
+* npm Workspaces
 
 ## Estrutura
 
-```
+```text
 helpdesk/
 ├── apps/
-│   ├── api/          # Fastify + Prisma
-│   └── web/          # React + Vite
+│   ├── api/
+│   └── web/
 ├── packages/
-│   └── shared/       # Enums e tipos compartilhados entre API e frontend
-├── docker-compose.yml
-└── package.json
+│   └── shared/
+└── docker-compose.yml
 ```
 
-## Como rodar localmente
+## Executando o projeto
 
-**Pré-requisitos:** Node.js 20+, Docker
+### Pré-requisitos
+
+* Node.js 20 ou superior
+* Docker
+
+Clone o repositório:
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/viniizn/helpdesk.git
 cd helpdesk
+```
 
-# 2. Instale as dependências
+Instale as dependências:
+
+```bash
 npm install
+```
 
-# 3. Configure as variáveis de ambiente
+Configure as variáveis de ambiente:
+
+```bash
 cp apps/api/.env.example apps/api/.env
-# Edite o .env com suas configurações
+```
 
-# 4. Suba o banco de dados
-docker-compose up db -d
+Inicie o banco de dados:
 
-# 5. Rode as migrations
+```bash
+docker compose up -d
+```
+
+Execute as migrations:
+
+```bash
 cd apps/api
 npx prisma migrate dev
+```
 
-# 6. Crie o primeiro admin direto no banco
-npx prisma studio
-# Na tabela User, crie um usuário com role ADMIN
+Inicie a API:
 
-# 7. Suba a API
-npx tsx src/server.ts
+```bash
+npm run dev
+```
 
-# 8. Em outro terminal, suba o frontend
+Em outro terminal, inicie o frontend:
+
+```bash
 cd apps/web
 npm run dev
 ```
 
-Acesse `http://localhost:5173` e faça login com o admin criado.
+O frontend ficará disponível em `http://localhost:5173`.
 
-## Variáveis de ambiente
+## Licença
 
-```bash
-# apps/api/.env
-DATABASE_URL="postgresql://user:password@localhost:5432/helpdesk"
-JWT_SECRET="min-32-caracteres"
-COOKIE_SECRET="min-32-caracteres-diferente"
-FRONTEND_URL="http://localhost:5173"
-NODE_ENV="development"
-
-# SMTP (opcional em desenvolvimento — link de convite aparece no terminal)
-SMTP_HOST=""
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER=""
-SMTP_PASS=""
-```
-
-## Fluxo de acesso
-
-```
-Admin cria convite → Email enviado com link → 
-Usuário define senha → Conta ativada → Login
-```
-
-Em desenvolvimento sem SMTP configurado, o link de convite aparece diretamente no terminal da API.
-
-## Decisões técnicas
-
-- **Monorepo com npm Workspaces** — tipos TypeScript definidos uma vez em `packages/shared` e reutilizados na API e no frontend sem duplicação
-- **HttpOnly Cookies** — proteção contra XSS; o token JWT nunca é acessível via JavaScript no browser
-- **Transições de status validadas** — impossível ir de `Aberto` direto para `Encerrado`; o fluxo é controlado no backend e refletido no frontend
-- **Sem registro público** — acesso ao sistema só via convite do admin, adequado para ambientes corporativos internos
-- **Snapshot de localização** — a localização é salva no chamado no momento da abertura, evitando que mudanças no perfil afetem chamados anteriores
+Projeto desenvolvido para fins de estudo e portfólio.

@@ -11,6 +11,7 @@ import { CategoriesPage }   from '@/pages/admin/CategoriesPage'
 import { InvitesPage }      from '@/pages/admin/InvitesPage'
 import { Layout }           from '@/components/app/Layout'
 import { ProfilePage }      from '@/pages/ProfilePage'
+import { AppearancePage }   from '@/pages/AppearancePage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -34,22 +35,21 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/login"          element={<LoginPage />} />
-      <Route path="/accept-invite"  element={<AcceptInvitePage />} />
+      <Route path="/login"         element={<LoginPage />} />
+      <Route path="/accept-invite" element={<AcceptInvitePage />} />
 
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route index element={<Navigate to="/tickets" replace />} />
-        <Route path="profile"      element={<ProfilePage />} />
-        <Route path="tickets"      element={<TicketsPage />} />
-        <Route path="tickets/new"  element={<NewTicketPage />} />
-        <Route path="tickets/:id"  element={<TicketDetailPage />} />
+        <Route path="profile"    element={<ProfilePage />} />
+        <Route path="appearance" element={<AppearancePage />} />
+        <Route path="tickets"    element={<TicketsPage />} />
+        <Route path="tickets/new" element={<NewTicketPage />} />
+        <Route path="tickets/:id" element={<TicketDetailPage />} />
 
-        <Route path="admin" element={<AdminRoute><Layout /></AdminRoute>}>
-          <Route path="dashboard"  element={<DashboardPage />} />
-          <Route path="users"      element={<UsersPage />} />
-          <Route path="categories" element={<CategoriesPage />} />
-          <Route path="invites"    element={<InvitesPage />} />
-        </Route>
+        <Route path="admin/dashboard"  element={<AdminRoute><DashboardPage /></AdminRoute>} />
+        <Route path="admin/users"      element={<AdminRoute><UsersPage /></AdminRoute>} />
+        <Route path="admin/categories" element={<AdminRoute><CategoriesPage /></AdminRoute>} />
+        <Route path="admin/invites"    element={<AdminRoute><InvitesPage /></AdminRoute>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/tickets" replace />} />

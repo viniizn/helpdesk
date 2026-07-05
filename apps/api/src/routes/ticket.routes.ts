@@ -67,7 +67,6 @@ export async function ticketRoutes(app: FastifyInstance) {
         const isUser = request.user.role === "USER";
 
         const where = {
-        // Se for usuário, força filtro pelo próprio id
         ...(isUser && { createdById: request.user.sub }),
         ...(filters.status     && { status:       filters.status }),
         ...(filters.priority   && { priority:     filters.priority }),
@@ -192,7 +191,7 @@ export async function ticketRoutes(app: FastifyInstance) {
         const { id }        = request.params as { id: string };
         const { agentId }   = assignTicketSchema.parse(request.body);
 
-        //Só admin atribui técnicos
+        // admin
         if (request.user.role !== "ADMIN") {
             return reply.status(403).send({ message: "Acesso negado" });
         }
@@ -203,7 +202,6 @@ export async function ticketRoutes(app: FastifyInstance) {
             return reply.status(404).send({ error: "Chamado não encontrado" });
         }
 
-        //Se agentId não for null, verifica se técnico existe e tem role AGENT
         if (agentId !== null) {
             const agent = await prisma.user.findUnique({ where: { id: agentId } });
 
@@ -222,7 +220,7 @@ export async function ticketRoutes(app: FastifyInstance) {
         return reply.send({ ticket: updated })
     })
 
-        //Atualizar ticket (titulo, descricao, prioridade)
+        //Atualizar ticket
     app.patch("/:id", async (request, reply) => {
         const { id } = request.params as { id: string };
         const data = updateTicketSchema.parse(request.body);
@@ -233,13 +231,11 @@ export async function ticketRoutes(app: FastifyInstance) {
             return reply.status(404).send({ error: "Chamado não encontrado" });
         }
 
-        //Só o criador/admin podem editar
         const isAdmin = request.user.role === "ADMIN";
         if (!isAdmin && ticket.createdById !== request.user.sub) {
             return reply.status(403).send({ message: "Acesso negado" });
         }
 
-        //Ticket fechado nao pode ser editado
         if (ticket.status === "CLOSED") {
             return reply.status(400).send({ message: "Chamado encerrado não pode ser editado" });
         }

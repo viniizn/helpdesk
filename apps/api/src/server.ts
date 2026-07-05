@@ -10,6 +10,7 @@ import { adminRoutes } from "./routes/admin.routes.js";
 import { ZodError } from 'zod'
 import { userRoutes } from "./routes/user.routes.js";
 import { inviteRoutes } from "./routes/invite.routes.js";
+import 'dotenv/config'
 
 const app = Fastify({ logger: true})
 

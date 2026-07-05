@@ -9,9 +9,6 @@ export const createTicketSchema = z.object({
   location:    z.string().min(2).max(150).optional(),
 })
 
-// z.nativeEnum funciona com nosso padrão "as const".
-// Valida que o valor recebido é um dos valores do enum — rejeita qualquer outro string.
-
 export const updateTicketSchema = z.object({
   title:       z.string().min(5).max(120).optional(),
   description: z.string().min(20).optional(),
@@ -23,7 +20,6 @@ export const changeStatusSchema = z.object({
 })
 
 export const assignTicketSchema = z.object({
-  // nullable() permite mandar null para desatribuir um técnico
   agentId: z.string().cuid().nullable(),
 })
 
@@ -31,7 +27,6 @@ export const listTicketsSchema = z.object({
   status:     z.nativeEnum(TicketStatus).optional(),
   priority:   z.nativeEnum(TicketPriority).optional(),
   assignedTo: z.string().cuid().optional(),
-  // coerce converte string da query param para number automaticamente
   page:       z.coerce.number().min(1).default(1),
   limit:      z.coerce.number().min(1).max(100).default(20),
 })
@@ -41,3 +36,4 @@ export type UpdateTicketInput  = z.infer<typeof updateTicketSchema>
 export type ChangeStatusInput  = z.infer<typeof changeStatusSchema>
 export type AssignTicketInput  = z.infer<typeof assignTicketSchema>
 export type ListTicketsInput   = z.infer<typeof listTicketsSchema>
+
